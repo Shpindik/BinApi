@@ -12,6 +12,11 @@ class TickerPriceListView(generics.ListAPIView):
     serializer_class = TickerPriceSerializer
 
     def get_queryset(self):
+        """
+        Возвращает последний тикер для каждого символа.
+        Если указан символ, возвращает только последний тикер
+        для этого символа.
+        """
         symbol = self.request.query_params.get('symbol')
         subquery = TickerPrice.objects.values('symbol').annotate(
             latest_event_time=Max('event_time')
@@ -32,6 +37,10 @@ class TickerPriceListView(generics.ListAPIView):
 class TickerPriceHistoryView(APIView):
     """Просмотр истории цен через REST API"""
     def get(self, request):
+        """
+        Возвращает историю цен с возможностью фильтрации
+        по символу и диапазону времени.
+        """
         symbol = request.query_params.get('symbol')
         start = request.query_params.get('start')
         end = request.query_params.get('end')

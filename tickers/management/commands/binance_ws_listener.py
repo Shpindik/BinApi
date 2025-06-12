@@ -9,12 +9,16 @@ from django.core.management.base import BaseCommand
 
 from tickers.models import TickerPrice
 
-BINANCE_WS_URL = "wss://stream.binance.com:9443/stream"
-DEFAULT_SYMBOLS = ["btcusdt", "ethusdt"]
+BINANCE_WS_URL = 'wss://stream.binance.com:9443/stream'
+DEFAULT_SYMBOLS = ['btcusdt', 'ethusdt']
 
 
 class Command(BaseCommand):
-    help = "Слушает Binance WebSocket и сохраняет цены в БД"
+    """
+    Слушает Binance WebSocket и сохраняет цены в БД
+    """
+
+    help = 'Слушает Binance WebSocket и сохраняет цены в БД'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -29,7 +33,7 @@ class Command(BaseCommand):
         asyncio.run(self.listen(symbols))
 
     async def listen(self, symbols):
-        """Listen to WebSocket stream, update DB every minute"""
+        """Слушает поток WebSocket, обновляет БД каждую минуту"""
         streams = [f"{symbol.lower()}@ticker" for symbol in symbols]
         stream_url = (
             f"wss://stream.binance.com:9443/stream?streams={'/'.join(streams)}"
@@ -40,13 +44,13 @@ class Command(BaseCommand):
 
         async def save_all():
             for symbol, (price, event_time) in last_prices.items():
-                # Create new ticker price without deleting old records
+                # Создание новой записи цены тикера без удаления старых записей
                 await sync_to_async(TickerPrice.objects.create)(
                     symbol=symbol,
                     price=price,
                     event_time=event_time
                 )
-                # Send update to WebSocket
+                # Отправка обновления в WebSocket
                 channel_layer = get_channel_layer()
                 await channel_layer.group_send(
                     'tickers',
@@ -61,7 +65,7 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Updated {symbol}: {float(price):.1f} @ '
+                        f'Обновлено {symbol}: {float(price):.1f} @ '
                         f'{event_time.strftime("%Y-%m-%d %H:%M:%S UTC")}'
                     )
                 )
@@ -74,7 +78,7 @@ class Command(BaseCommand):
                     )
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f'Connected to {stream_url} at {formatted_time}'
+                            f'Подключено к {stream_url} в {formatted_time}'
                         )
                     )
                     while True:
@@ -94,8 +98,8 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.WARNING(
-                        f'Connection closed at {formatted_time}. '
-                        'Reconnecting...'
+                        f'Соединение закрыто в {formatted_time}. '
+                        'Переподключение...'
                     )
                 )
                 await asyncio.sleep(5)
@@ -105,7 +109,7 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.ERROR(
-                        f'Error at {formatted_time}: {str(e)}'
+                        f'Ошибка в {formatted_time}: {str(e)}'
                     )
                 )
                 await asyncio.sleep(5)

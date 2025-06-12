@@ -11,15 +11,17 @@ from tickers.models import TickerPrice
 
 @pytest.mark.django_db
 class TestTickerPriceListView:
+    """Тесты для представления списка цен тикеров"""
     def setup_method(self):
+        '''Настройка клиента API и очистка базы данных перед каждым тестом'''
         self.client = APIClient()
         self.url = reverse('tickerprice-list')
         self.now = timezone.now()
-        # Clear database before each test
+        # Очистка базы данных перед каждым тестом
         TickerPrice.objects.all().delete()
 
     def test_list_tickers(self):
-        """Test listing all tickers"""
+        '''Тест получения списка всех тикеров'''
         TickerPrice.objects.create(
             symbol='BTCUSDT',
             price='50000.00',
@@ -36,7 +38,7 @@ class TestTickerPriceListView:
         assert len(response.data) == 2
 
     def test_filter_by_symbol(self):
-        """Test filtering tickers by symbol"""
+        '''Тест фильтрации тикеров по символу'''
         TickerPrice.objects.create(
             symbol='BTCUSDT',
             price='50000.00',
@@ -60,8 +62,8 @@ class TestTickerPriceListView:
         assert response.data[0]['price'] == '51000.00000000'
 
     def test_filter_by_time_range(self):
-        """Test filtering tickers by time range"""
-        # Create test data with explicit timezone
+        '''Тест фильтрации тикеров по диапазону времени'''
+        # Создание тестовых данных с явной временной зоной
         now = timezone.now()
         TickerPrice.objects.create(
             symbol='BTCUSDT',
@@ -74,7 +76,7 @@ class TestTickerPriceListView:
             event_time=now.replace(tzinfo=dt_timezone.utc)
         )
 
-        # Test filtering by time range
+        # Тест фильтрации по диапазону времени
         start_time = now.replace(tzinfo=dt_timezone.utc)
         end_time = now.replace(tzinfo=dt_timezone.utc)
         url = reverse('tickerprice-list')
@@ -85,4 +87,4 @@ class TestTickerPriceListView:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2  # Both tickers should be included
+        assert len(data) == 2  # Оба тикера должны быть включены

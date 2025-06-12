@@ -6,8 +6,9 @@ from tickers.models import TickerPrice
 
 @pytest.mark.django_db
 class TestTickerPrice:
+    """Тесты для модели TickerPrice"""
     def test_create_ticker(self):
-        """Test creating a new ticker price"""
+        '''Тест создания новой цены тикера'''
         ticker = TickerPrice.objects.create(
             symbol='BTCUSDT',
             price='50000.00',
@@ -18,22 +19,22 @@ class TestTickerPrice:
         assert ticker.received_at is not None
 
     def test_ticker_str_representation(self):
-        """Test string representation of ticker"""
+        '''Тест строкового представления тикера'''
         now = timezone.now()
         ticker = TickerPrice.objects.create(
             symbol='ETHUSDT',
             price='3000.00',
             event_time=now
         )
-        expected_str = f"ETHUSDT: 3000.00 @ {now}"
+        expected_str = f'ETHUSDT: 3000.00 @ {now}'
         assert str(ticker) == expected_str
 
     def test_ticker_ordering(self):
-        """Test default ordering of tickers"""
+        '''Тест сортировки тикеров по умолчанию'''
         now = timezone.now()
         old_time = now - timezone.timedelta(hours=1)
-        
-        # Create tickers with explicit timezone
+
+        # Создание тикеров с явным указанием временной зоны
         TickerPrice.objects.create(
             symbol='BTCUSDT',
             price='50000.00',
@@ -46,5 +47,9 @@ class TestTickerPrice:
         )
 
         tickers = TickerPrice.objects.all()
-        assert tickers[0].event_time == now.replace(tzinfo=dt_timezone.utc)
-        assert tickers[1].event_time == old_time.replace(tzinfo=dt_timezone.utc) 
+        assert (
+            tickers[0].event_time == now.replace(tzinfo=dt_timezone.utc)
+        )
+        assert (
+            tickers[1].event_time == old_time.replace(tzinfo=dt_timezone.utc)
+        )

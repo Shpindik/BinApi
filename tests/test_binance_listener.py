@@ -12,40 +12,49 @@ from tickers.models import TickerPrice
 
 @pytest.mark.django_db(transaction=True)
 class TestBinanceListener:
+    """
+    Тесты для команды прослушивания Binance WebSocket и сохранения цен тикеров
+    в БД
+    """
     @pytest.fixture(autouse=True)
     def setup_method(self):
-        """Clear database before each test"""
+        '''Очищает базу данных перед каждым тестом'''
         with transaction.atomic():
             TickerPrice.objects.all().delete()
 
     @pytest.fixture
     def command(self):
+        '''Возвращает экземпляр команды для тестирования'''
         return Command()
 
     @pytest.fixture
     def mock_websocket(self):
+        '''Мок WebSocket для тестирования'''
         with patch('websockets.connect') as mock:
             mock.return_value.__aenter__.return_value = AsyncMock()
             yield mock
 
     @sync_to_async
     def get_ticker(self):
+        '''Возвращает первый тикер из базы данных'''
         with transaction.atomic():
             return TickerPrice.objects.first()
 
     @sync_to_async
     def get_tickers(self):
+        '''Возвращает список всех тикеров из базы данных'''
         with transaction.atomic():
             return list(TickerPrice.objects.all())
 
     @sync_to_async
     def get_ticker_count(self):
+        '''Возвращает количество тикеров в базе данных'''
         with transaction.atomic():
             return TickerPrice.objects.count()
 
     async def test_process_message(self, command, mock_websocket):
-        """Test processing a message from Binance WebSocket"""
-        # Mock message from Binance
+        '''Тест обработки сообщения из Binance WebSocket'''
+        # Мок сообщения из Binance
         message = json.dumps({
             'data': {
                 's': 'BTCUSDT',
@@ -54,23 +63,23 @@ class TestBinanceListener:
             }
         })
 
-        # Extract ticker data
+        # Извлечение данных тикера
         symbol, price, event_time = await command.extract_ticker(message)
 
-        # Check extracted data
+        # Проверка извлеченных данных
         assert symbol == 'BTCUSDT'
         assert Decimal(price) == Decimal('50000.00')
         assert event_time is not None
 
     async def test_invalid_message(self, command, mock_websocket):
-        """Test handling invalid message format"""
-        # Mock invalid message
+        '''Тест обработки сообщения с неверным форматом'''
+        # Мок неверного сообщения
         message = json.dumps({'invalid': 'format'})
 
-        # Extract ticker data
+        # Извлечение данных тикера
         symbol, price, event_time = await command.extract_ticker(message)
 
-        # Check extracted data
+        # Проверка извлеченных данных
         assert symbol is None
         assert price is None
         assert event_time is None
