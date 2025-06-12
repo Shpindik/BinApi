@@ -40,11 +40,7 @@ class Command(BaseCommand):
 
         async def save_all():
             for symbol, (price, event_time) in last_prices.items():
-                # Delete old records for this symbol
-                await sync_to_async(
-                    TickerPrice.objects.filter(symbol=symbol).delete
-                )()
-                # Create new ticker price
+                # Create new ticker price without deleting old records
                 await sync_to_async(TickerPrice.objects.create)(
                     symbol=symbol,
                     price=price,
@@ -65,16 +61,20 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Updated {symbol}: {price} @ {event_time}'
+                        f'Updated {symbol}: {float(price):.1f} @ '
+                        f'{event_time.strftime("%Y-%m-%d %H:%M:%S UTC")}'
                     )
                 )
 
         while True:
             try:
                 async with websockets.connect(stream_url) as websocket:
+                    formatted_time = datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%d %H:%M:%S UTC"
+                    )
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f'Connected to {stream_url}'
+                            f'Connected to {stream_url} at {formatted_time}'
                         )
                     )
                     while True:
@@ -89,15 +89,24 @@ class Command(BaseCommand):
                             await save_all()
                             last_save = now
             except websockets.exceptions.ConnectionClosed:
+                formatted_time = datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M:%S UTC"
+                )
                 self.stdout.write(
                     self.style.WARNING(
-                        'Connection closed. Reconnecting...'
+                        f'Connection closed at {formatted_time}. '
+                        'Reconnecting...'
                     )
                 )
                 await asyncio.sleep(5)
             except Exception as e:
+                formatted_time = datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M:%S UTC"
+                )
                 self.stdout.write(
-                    self.style.ERROR(f'Error: {str(e)}')
+                    self.style.ERROR(
+                        f'Error at {formatted_time}: {str(e)}'
+                    )
                 )
                 await asyncio.sleep(5)
 

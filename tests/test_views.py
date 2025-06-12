@@ -43,6 +43,11 @@ class TestTickerPriceListView:
             event_time=self.now
         )
         TickerPrice.objects.create(
+            symbol='BTCUSDT',
+            price='51000.00',
+            event_time=self.now + timezone.timedelta(seconds=10)
+        )
+        TickerPrice.objects.create(
             symbol='ETHUSDT',
             price='3000.00',
             event_time=self.now
@@ -52,6 +57,7 @@ class TestTickerPriceListView:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 1
         assert response.data[0]['symbol'] == 'BTCUSDT'
+        assert response.data[0]['price'] == '51000.00000000'
 
     def test_filter_by_time_range(self):
         """Test filtering tickers by time range"""
@@ -73,9 +79,10 @@ class TestTickerPriceListView:
         end_time = now.replace(tzinfo=dt_timezone.utc)
         url = reverse('tickerprice-list')
         response = self.client.get(
-            f'{url}?start_time={start_time.isoformat()}&end_time={end_time.isoformat()}'
+            f'{url}?start_time={start_time.isoformat()}&'
+            f'end_time={end_time.isoformat()}'
         )
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2  # Both tickers should be included 
+        assert len(data) == 2  # Both tickers should be included

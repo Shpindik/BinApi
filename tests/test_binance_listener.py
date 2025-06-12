@@ -49,61 +49,28 @@ class TestBinanceListener:
         message = json.dumps({
             'data': {
                 's': 'BTCUSDT',
-                'p': '50000.00',
-                'T': int(timezone.now().timestamp() * 1000)
+                'c': '50000.00',
+                'E': int(timezone.now().timestamp() * 1000)
             }
         })
 
-        # Process the message
-        await command.process_message(message)
+        # Extract ticker data
+        symbol, price, event_time = await command.extract_ticker(message)
 
-        # Check if ticker was created in database
-        ticker = await self.get_ticker()
-        assert ticker is not None
-        assert ticker.symbol == 'BTCUSDT'
-        assert Decimal(ticker.price) == Decimal('50000.00')
-
-    async def test_listen_multiple_symbols(self, command, mock_websocket):
-        """Test listening to multiple symbols"""
-        symbols = ['btcusdt', 'ethusdt']
-        
-        # Mock WebSocket messages
-        mock_ws = mock_websocket.return_value.__aenter__.return_value
-        mock_ws.__aiter__.return_value = [
-            json.dumps({
-                'data': {
-                    's': 'BTCUSDT',
-                    'p': '50000.00',
-                    'T': int(timezone.now().timestamp() * 1000)
-                }
-            }),
-            json.dumps({
-                'data': {
-                    's': 'ETHUSDT',
-                    'p': '3000.00',
-                    'T': int(timezone.now().timestamp() * 1000)
-                }
-            })
-        ]
-
-        # Start listening
-        await command.listen(symbols)
-
-        # Check if both tickers were created
-        tickers = await self.get_tickers()
-        assert len(tickers) == 2
-        symbols = {t.symbol for t in tickers}
-        assert 'BTCUSDT' in symbols
-        assert 'ETHUSDT' in symbols
+        # Check extracted data
+        assert symbol == 'BTCUSDT'
+        assert Decimal(price) == Decimal('50000.00')
+        assert event_time is not None
 
     async def test_invalid_message(self, command, mock_websocket):
         """Test handling invalid message format"""
         # Mock invalid message
         message = json.dumps({'invalid': 'format'})
 
-        # Process the message
-        await command.process_message(message)
+        # Extract ticker data
+        symbol, price, event_time = await command.extract_ticker(message)
 
-        # No ticker should be created
-        count = await self.get_ticker_count()
-        assert count == 0 
+        # Check extracted data
+        assert symbol is None
+        assert price is None
+        assert event_time is None

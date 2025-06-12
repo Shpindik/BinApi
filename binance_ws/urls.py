@@ -13,24 +13,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path
-from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
-from tickers.views import TickerPriceListView
+from django.views.generic import RedirectView
+from tickers.views import TickerPriceListView, TickerPriceHistoryView
 
 urlpatterns = [
     path(
-        'admin/',
-        admin.site.urls
+        '', RedirectView.as_view(url='/api/tickers/', permanent=True),
+        name='api-root'
     ),
     path(
         'api/tickers/',
         TickerPriceListView.as_view(),
         name='tickerprice-list'
     ),
-    path('', RedirectView.as_view(url='/admin/'), name='home'),
+    path(
+        'api/tickers/history/',
+        TickerPriceHistoryView.as_view(),
+        name='tickerprice-history'
+    ),
 ]
 
 if settings.DEBUG:

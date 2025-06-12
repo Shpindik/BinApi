@@ -7,5 +7,9 @@ urlpatterns = [
         views.TickerPriceListView.as_view(),
         name='tickerprice-list'
     ),
-    # path('', TemplateView.as_view(template_name='tickers.html'), name='tickers-test'),
+    path(
+        'tickers/history/',
+        views.TickerPriceHistoryView.as_view(),
+        name='tickerprice-history'
+    ),
 ]
