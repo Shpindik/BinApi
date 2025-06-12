@@ -47,6 +47,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      web:
+        condition: service_started
 
 volumes:
   postgres_data:
